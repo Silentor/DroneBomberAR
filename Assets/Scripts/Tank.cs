@@ -10,11 +10,19 @@ namespace Silentor.Bomber
 {
     public class Tank : MonoBehaviour
     {
+        public ParticleSystem CombustionFX;
+        public GameObject ExplosionFX;
+        public GameObject FireFX;
+        public ParticleSystem DamagedSmokeFX;
+        
         public float RotationSpeed = 90;
         public float MovementSpeed = 1;
         private Ground _ground;
         private Vector3 _startPosition;
         private GameLogic _game;
+        private int _hitsCount;
+
+        private CancellationTokenSource _roamingCancel;
 
         public void Init ( GameLogic game, Ground ground )
         {
@@ -23,7 +31,36 @@ namespace Silentor.Bomber
             _startPosition = transform.position;
 
             Debug.Log( $"[{nameof(Tank)}]-[{nameof(Init)}] tank inited, start AI" );
-            Roam( destroyCancellationToken ).Forget(  Debug.LogException );
+            _roamingCancel = new CancellationTokenSource();
+            Roam( CancellationTokenSource.CreateLinkedTokenSource( _roamingCancel.Token, destroyCancellationToken ).Token ).Forget(  Debug.LogException );
+        }
+
+        public void Damage( )
+        {
+            if( ++_hitsCount > 1 )
+                Explode();
+            else
+            {
+                MovementSpeed /= 2;
+                RotationSpeed /= 2;
+                DamagedSmokeFX.gameObject.SetActive( true );
+            }
+        }
+
+        public void Explode( )
+        {
+            //Stop roaming
+            _roamingCancel.Cancel();
+
+            CombustionFX.Stop();
+            DamagedSmokeFX.Stop();
+
+            ExplosionFX.transform.SetParent( null );
+            ExplosionFX.gameObject.SetActive( true );
+            FireFX.transform.SetParent( null );
+            FireFX.gameObject.SetActive( true );
+
+            Destroy( gameObject, 2f );
         }
 
         private async UniTask Roam( CancellationToken cancel )
@@ -46,16 +83,20 @@ namespace Silentor.Bomber
         private async UniTask MoveTo( Vector3 destination, CancellationToken cancel )
         {
             var oldGround = _ground;
+            CombustionFX.Play();
+
             while ( true )
             {
                 if( oldGround != _ground )          //Tank's ground was changed, its better to stop moving and repeat roaming
                 {
+                    CombustionFX.Stop();
                     return;
                 }
 
                 var remainPath = destination - transform.position;
                 if ( remainPath.magnitude < MovementSpeed * Time.deltaTime )
                 {
+                    CombustionFX.Stop();
                     transform.position = destination;
                     return;
                 }
