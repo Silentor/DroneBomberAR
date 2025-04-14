@@ -167,7 +167,7 @@ namespace Silentor.Bomber
         /// </summary>
         private void CheckGround( )
         {
-            if( _ground.Plane )
+            if( _ground != null && _ground.Plane )
             {
                 if ( _ground.Plane.subsumedBy )
                 {

@@ -1,9 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
+using Random = UnityEngine.Random;
 
 namespace Silentor.Bomber
 {
@@ -15,12 +18,16 @@ namespace Silentor.Bomber
         [Min(0)]
         public int MaxTanksCount = 10;
 
+        public float BombDropTimeout = 1f;
+
         public IReadOnlyList<Tank> Tanks => _tanks;
         public IReadOnlyList<Ground> Grounds => _grounds;
 
+        public bool IsBombReady => Time.time - _lastTimedroppedBomb > BombDropTimeout;
+
         public void DropTheBomb( )
         {
-             if( Time.time - _lastTimedroppedBomb < 1f )           
+             if( Time.time - _lastTimedroppedBomb < BombDropTimeout )           
                  return;
 
              _lastTimedroppedBomb = Time.time;
@@ -67,6 +74,8 @@ namespace Silentor.Bomber
 
             return result;
         }
+
+        public event Action BombDropped;
 
         private ARAnchorManager _anchorManager;
 
@@ -146,6 +155,7 @@ namespace Silentor.Bomber
         private readonly List<ARPlane> _oldGrounds = new ();
         private Camera _droneCamera;
 
+
         private async UniTask SpawnTanks( ARPlaneManager planeManager, CancellationToken cancel )
         {
             //Spawn tanks on big enough horizontal planes
@@ -166,7 +176,10 @@ namespace Silentor.Bomber
                 {
                     foreach ( var ground in _grounds )
                     {
-                        var spawnPos = ground.Plane.transform.position;
+                        var extend = math.min( ground.Plane.size.x, ground.Plane.size.y ) / 2;
+                        var spawnPos = ground.Plane.center + new Vector3( Random.Range( -extend, extend ), 0, Random.Range( -extend, extend ) );
+                        if( Vector2.Distance( spawnPos.ToVector2XZ(), _droneCamera.transform.position.ToVector2XZ() ) > 5 )
+                            continue;
                         if ( _tanks.TrueForAll( t => Vector3.Distance( t.transform.position, spawnPos ) > 1 ) )
                         {
                             //var anchor = await GetAnchorForPosition( spawnPos, cancel );
