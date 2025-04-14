@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Unity.Collections;
 using UnityEngine;
@@ -23,33 +24,13 @@ namespace Silentor.Bomber
 
         public async UniTask<Boolean> Init( CancellationToken cancel )
         {
-            Session              =  UnityEngine.Object.FindFirstObjectByType<ARSession>();
             ARSession.stateChanged += LogStateChanged;
 
-            if ((ARSession.state == ARSessionState.None) ||
-                (ARSession.state == ARSessionState.CheckingAvailability))
-            {
-                await ARSession.CheckAvailability();
-            }
-
-            if (ARSession.state == ARSessionState.Unsupported)
-            {
-                Debug.LogError( $"[{nameof(InitARSession)}]-[{nameof(Init)}] AR unavailable, stop the app" );
+            var sessionResult = await InitSession( cancel ) ;
+            if ( !sessionResult )
                 return false;
-            }
-            else if ( ARSession.state == ARSessionState.NeedsInstall )
-            {
-                Debug.Log( $"[{nameof(InitARSession)}]-[{nameof(Init)}] Need install..." );
 
-                await ARSession.Install();
-
-                Debug.Log( $"[{nameof(InitARSession)}]-[{nameof(Init)}] Installed ARCore..." );
-            }
-
-            Debug.Log( $"[{nameof(InitARSession)}]-[{nameof(Init)}] before start state {ARSession.state}" );
-
-            await UniTask.WaitUntil( () => ARSession.state > ARSessionState.Ready, cancellationToken: cancel );         //Ready is not fully ready really :) only session ready, but not subsystems
-
+            Session              =  UnityEngine.Object.FindFirstObjectByType<ARSession>();
             var descr = Session.descriptor;
             var subs  = Session.subsystem;
             Debug.Log( $"[{nameof(InitARSession)}]-[{nameof(Init)}] Session name {descr.id}, support install {descr.supportsInstall}" );
@@ -75,6 +56,41 @@ namespace Silentor.Bomber
                 return false;
 
             return true;
+        }
+
+        private async Task<Boolean> InitSession(CancellationToken cancel )
+        {
+            if ((ARSession.state == ARSessionState.None) ||
+                (ARSession.state == ARSessionState.CheckingAvailability))
+            {
+                await ARSession.CheckAvailability();
+            }
+
+            if (ARSession.state == ARSessionState.Unsupported)
+            {
+                Debug.LogError( $"[{nameof(InitARSession)}]-[{nameof(Init)}] AR unavailable, stop the app" );
+                return false;
+            }
+            else if ( ARSession.state == ARSessionState.NeedsInstall )
+            {
+                Debug.Log( $"[{nameof(InitARSession)}]-[{nameof(Init)}] Need install..." );
+
+                await ARSession.Install();
+
+                Debug.Log( $"[{nameof(InitARSession)}]-[{nameof(Init)}] Installed ARCore..." );
+            }
+
+            Debug.Log( $"[{nameof(InitARSession)}]-[{nameof(Init)}] before start state {ARSession.state}" );
+
+            await UniTask.WaitUntil( () => ARSession.state > ARSessionState.Ready, cancellationToken: cancel );         //Ready is not fully ready really :) only session ready, but not subsystems
+            return true;
+        }
+
+        public async UniTask Restart( CancellationToken cancel )
+        {
+            Session.enabled = false;
+            Session.enabled = true;
+            await InitSession( cancel );
         }
 
         private Boolean InitCamera( )

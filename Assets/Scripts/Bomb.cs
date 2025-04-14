@@ -8,6 +8,8 @@ namespace Silentor.Bomber
     {
         public GameObject ExplosionPrefab;
 
+        public float FlyDistance { get; private set; }
+
         public void Init( Vector3 startVelocity, IReadOnlyList<Ground> grounds )
         {
             _velocity = startVelocity;
@@ -64,18 +66,20 @@ namespace Silentor.Bomber
             _velocity += new Vector3( 0, Gravity * Time.deltaTime, 0 );
             transform.position += _velocity * Time.deltaTime;
             var fallVector = transform.position - _oldPosition;
+            var fallStepMagnitude = fallVector.magnitude;
+            FlyDistance += fallStepMagnitude;
 
             var hits = ArrayPool<RaycastHit>.Shared.Rent( 16 );
             try
             {
-                var hitsCount = Physics.SphereCastNonAlloc( _oldPosition, _radius, fallVector.normalized, hits, fallVector.magnitude, LayersMask.Interactables );
+                var hitsCount = Physics.SphereCastNonAlloc( _oldPosition, _radius, fallVector.normalized, hits, fallStepMagnitude, LayersMask.Interactables );
                 for ( int i = 0; i < hitsCount; i++ )
                 {
                     var hit =           hits[i];
                     if ( hit.rigidbody.TryGetComponent( out Tank tank ) )
                     {
                         transform.position = hit.point;
-                        tank.Damage();
+                        tank.Damage( this );
                         Explode();
                         return;
                     } 

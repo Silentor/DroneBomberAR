@@ -11,6 +11,7 @@ namespace Silentor.Bomber
         public Image BombIndicator;
         public Color BombReadyColor = Color.yellow;
         public Color BombNotReadyColor = Color.gray;
+        public TMP_Text Score;
 
 
         [Header("Debug")]
@@ -23,7 +24,7 @@ namespace Silentor.Bomber
 
         private GameLogic _gameplay;
         private Drone _drone;
-        private DateTime _startTime;
+        
 
         // Start is called once before the first execution of Update after the MonoBehaviour is created
         void Start()
@@ -31,7 +32,6 @@ namespace Silentor.Bomber
             Application.targetFrameRate = 30;
              _gameplay = FindAnyObjectByType<GameLogic>();
              _drone = FindAnyObjectByType<Drone>();
-             _startTime = DateTime.Now;
 
 #if DEBUG
             DebugPanel.SetActive( true );
@@ -50,11 +50,11 @@ namespace Silentor.Bomber
             Pitch.text       = $"Pitch: {_drone.GetComponent<AudioSource>().pitch}";
 #endif
 
-            var missionTime = DateTime.Now - _startTime;
+            var missionTime = _gameplay.MissionTime;
             MissionTime.text = $"{missionTime.Minutes:D2}:{missionTime.Seconds:D2}";     
 
             BombIndicator.color = _gameplay.IsBombReady ? BombReadyColor : BombNotReadyColor;
-
+            Score.text = $"Score: {_gameplay.Score}";
         }
     }
 }

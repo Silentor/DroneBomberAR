@@ -47,16 +47,20 @@ namespace Silentor.Bomber
             FireCannon( deathCancelToken ).Forget(  );
         }
 
-        public void Damage( )
+        public void Damage( Bomb bomb )
         {
-            if( ++_hitsCount > 1 )
+            if ( ++_hitsCount > 1 )
+            {
+                _game.OnTankDestroyed( this, bomb );
                 Explode();
+            }
             else
             {
                 MovementSpeed /= 2;
                 RotationSpeed /= 2;
                 CannonRotationSpeed /= 2;
                 DamagedSmokeFX.gameObject.SetActive( true );
+                _game.OnTankDamaged( this, bomb );
             }
         }
 
