@@ -77,7 +77,7 @@ namespace Silentor.Bomber
         private void Start( )
         {
             _droneCamera = Camera.main;
-            GamePlay( destroyCancellationToken ).Forget( Debug.LogException );                            
+            GamePlay( destroyCancellationToken ).Forget(  );                            
         }
 
         private void Update( )
@@ -103,7 +103,7 @@ namespace Silentor.Bomber
             init.PlaneManager.trackablesChanged.AddListener( PlaneManagerOnPlanesChanged );
             _anchorManager = init.AnchorManager;
 
-            SpawnTanks( init.PlaneManager, cancel ).Forget( Debug.LogException );
+            SpawnTanks( init.PlaneManager, cancel ).Forget(  );
         }
 
         private void PlaneManagerOnPlanesChanged(ARTrackablesChangedEventArgs<ARPlane> planesChangedEventArgs )
