@@ -4,7 +4,6 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.XR.ARSubsystems;
-using Object = System.Object;
 using Random = UnityEngine.Random;
 
 namespace Silentor.Bomber
@@ -139,7 +138,7 @@ namespace Silentor.Bomber
             while ( true )
             {
                 //Search target
-                await UniTask.Delay( TimeSpan.FromSeconds( Random.Range( 0.1f, 2f ) ), cancellationToken: cancel );
+                await UniTask.Delay( TimeSpan.FromSeconds( Random.Range( 1f, 5f ) ), cancellationToken: cancel );
 
                 //Select target direction
                 var targetRot = defaultRotation.z + Random.Range( -45f, 45f );
@@ -155,7 +154,7 @@ namespace Silentor.Bomber
                 }
 
                 //Prepare
-                await UniTask.Delay( TimeSpan.FromSeconds( Random.Range( 0.5f, 1f ) ), cancellationToken: cancel );
+                await UniTask.Delay( TimeSpan.FromSeconds( Random.Range( 1f, 3f ) ), cancellationToken: cancel );
 
                 //Fire
                 CannonVFX.Play();
@@ -180,7 +179,7 @@ namespace Silentor.Bomber
                 {
                     if( Mathf.Abs( _ground.Plane.center.y - transform.position.y ) > 0.1f )          //Stick to the ground
                     {
-                        transform.position = new Vector3( transform.position.x, _ground.Plane.center.y, transform.position.z );
+                        transform.position = transform.position.SetY( _ground.Plane.center.y );
                     }
                 }
             }

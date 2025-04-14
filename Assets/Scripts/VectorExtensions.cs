@@ -24,5 +24,10 @@ namespace Silentor.Bomber
             return new Vector2( vector3.x, vector3.z );
         }
 
+        public static Vector3 SetY( this Vector3 vector3, float y )
+        {
+            return new Vector3( vector3.x, y, vector3.z );
+        }
+
     }
 }

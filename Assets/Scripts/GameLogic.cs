@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
-using Object = System.Object;
 
 namespace Silentor.Bomber
 {
@@ -15,7 +11,9 @@ namespace Silentor.Bomber
     {
         public Tank TankPrefab;
         public Bomb BombPrefab;
-        public Transform TestConvex;
+
+        [Min(0)]
+        public int MaxTanksCount = 10;
 
         public IReadOnlyList<Tank> Tanks => _tanks;
         public IReadOnlyList<Ground> Grounds => _grounds;
@@ -153,27 +151,39 @@ namespace Silentor.Bomber
             //Spawn tanks on big enough horizontal planes
             while ( !cancel.IsCancellationRequested )
             {
-                _tanks.RemoveAll( t => !t );            //Cleanup of destroyed tanks
-
-                foreach ( var ground in _grounds )
+                //Cleanup destroyed and far away tanks
+                for ( int i = 0; i < (_tanks.Count); i++ )
                 {
-                    var spawnPos = ground.Plane.transform.position;
-                    if ( _tanks.TrueForAll( t => Vector3.Distance( t.transform.position, spawnPos ) > 1 ) )
+                    if( !_tanks[i] ) continue;
+
+                    if( Vector2.Distance( _tanks[i].transform.position.ToVector2XZ(), _droneCamera.transform.position.ToVector2XZ()) > 11 )
+                        Destroy( _tanks[i].gameObject );
+                }
+
+                _tanks.RemoveAll( t => !t );
+
+                if ( _tanks.Count < MaxTanksCount )
+                {
+                    foreach ( var ground in _grounds )
                     {
-                        //var anchor = await GetAnchorForPosition( spawnPos, cancel );
-                        //if ( anchor )
+                        var spawnPos = ground.Plane.transform.position;
+                        if ( _tanks.TrueForAll( t => Vector3.Distance( t.transform.position, spawnPos ) > 1 ) )
                         {
-                            //var tank = Instantiate( TankPrefab, spawnPos, Quaternion.identity, anchor.transform );
-                            var tank = Instantiate( TankPrefab, spawnPos, Quaternion.identity );
-                            _tanks.Add( tank );
-                            tank.Init( this, ground );
-                            //Debug.Log( $"[{nameof(GameLogic)}]-[{nameof(SpawnTanks)}] Tank spawned on plane {ground.Id}, anchor {anchor.trackableId}" );
-                            Debug.Log( $"[{nameof(GameLogic)}]-[{nameof(SpawnTanks)}] Tank spawned on plane {ground.Id}" );
+                            //var anchor = await GetAnchorForPosition( spawnPos, cancel );
+                            //if ( anchor )
+                            {
+                                //var tank = Instantiate( TankPrefab, spawnPos, Quaternion.identity, anchor.transform );
+                                var tank = Instantiate( TankPrefab, spawnPos, Quaternion.identity );
+                                _tanks.Add( tank );
+                                tank.Init( this, ground );
+                                //Debug.Log( $"[{nameof(GameLogic)}]-[{nameof(SpawnTanks)}] Tank spawned on plane {ground.Id}, anchor {anchor.trackableId}" );
+                                Debug.Log( $"[{nameof(GameLogic)}]-[{nameof(SpawnTanks)}] Tank spawned on plane {ground.Id}" );
+                            }
+                            // else
+                            // {
+                            //     Debug.LogError( $"[{nameof(GameLogic)}]-[{nameof(SpawnTanks)}] anchor not found" );
+                            // }
                         }
-                        // else
-                        // {
-                        //     Debug.LogError( $"[{nameof(GameLogic)}]-[{nameof(SpawnTanks)}] anchor not found" );
-                        // }
                     }
                 }
 
