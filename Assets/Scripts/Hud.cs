@@ -37,7 +37,7 @@ namespace Silentor.Bomber
              _gameplay = FindAnyObjectByType<GameLogic>();
              _drone = FindAnyObjectByType<Drone>();
 
-#if DEBUG
+#if DEBUG_BUILD
             DebugPanel.SetActive( true );
 #else
             DebugPanel.SetActive( false );
@@ -47,7 +47,7 @@ namespace Silentor.Bomber
         // Update is called once per frame
         void Update()
         {
-#if DEBUG            
+#if DEBUG_BUILD            
             TanksCount.text  = $"Tanks: {_gameplay.Tanks.Count}";
             GrounsCount.text = $"Grounds: {_gameplay.Grounds.Count}";
             Velocity.text    = $"Velocity: {_drone.Velocity} m/s";
