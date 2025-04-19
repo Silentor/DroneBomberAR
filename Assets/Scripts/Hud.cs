@@ -1,5 +1,6 @@
 using System;
 using TMPro;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,6 +13,9 @@ namespace Silentor.Bomber
         public Color BombReadyColor = Color.yellow;
         public Color BombNotReadyColor = Color.gray;
         public TMP_Text Score;
+        public TMP_Text CameraNeedWarning;
+        public TMP_Text HowToPlayInfo;
+        public Image    HowToPlayInfoIcon;
 
 
         [Header("Debug")]
@@ -55,6 +59,22 @@ namespace Silentor.Bomber
 
             BombIndicator.color = _gameplay.IsBombReady ? BombReadyColor : BombNotReadyColor;
             Score.text = $"Score: {_gameplay.Score}";
+
+            var isCameraAllowed = _gameplay.InitARSession.IsCameraAllowed.HasValue && _gameplay.InitARSession.IsCameraAllowed.Value;
+            CameraNeedWarning.gameObject.SetActive( !isCameraAllowed );
+            if ( isCameraAllowed && _gameplay.BombsDropped == 0 )
+            {
+                HowToPlayInfo.gameObject.SetActive( true );
+                HowToPlayInfo.alpha = math.remap( -1, 1, 0.1f, 1, math.sin( Time.time * math.PI ));
+                var iconColor = HowToPlayInfoIcon.color;
+                iconColor.a = HowToPlayInfo.alpha;
+                HowToPlayInfoIcon.color = iconColor;
+                HowToPlayInfoIcon.transform.localRotation = Quaternion.Euler( 0, math.remap( -1, 1, -45f, 45, math.sin( Time.time * math.PI )), 0 );
+            }
+            else
+            {
+                HowToPlayInfo.gameObject.SetActive( false );
+            }
         }
     }
 }

@@ -17,6 +17,8 @@ namespace Silentor.Bomber
 
         public ARAnchorManager AnchorManager { get; private set; }
 
+        public Boolean? IsCameraAllowed { get; private set; }
+
         private void LogStateChanged(ARSessionStateChangedEventArgs obj )
         {
             Debug.Log( $"[{nameof(InitARSession)}]-[{nameof(LogStateChanged)}] {obj.state}" );
@@ -41,19 +43,21 @@ namespace Silentor.Bomber
                 Debug.Log( $"{config.identifier}, {config.rank}, {config.capabilities}" );
 
             //Check camera system
-            var cameraResult = InitCamera();
+            Debug.Log( $"[{nameof(InitARSession)}]-[{nameof(Init)}] Initing camera" );
+            var cameraResult = await InitCamera( cancel );
             if ( !cameraResult )
                 return false;       //todo process camera permsission
 
             //Check Plane manager
+            Debug.Log( $"[{nameof(InitARSession)}]-[{nameof(Init)}] Initing plane manager" );
             var planeManagerResult = InitPlaneManager();
             if( !planeManagerResult )
                 return false;
 
             //Check Anchors
-            var anchorResult = InitAnchors();
-            if( !anchorResult )
-                return false;
+            // var anchorResult = InitAnchors();
+            // if( !anchorResult )
+            //     return false;
 
             return true;
         }
@@ -93,20 +97,29 @@ namespace Silentor.Bomber
             await InitSession( cancel );
         }
 
-        private Boolean InitCamera( )
+        private async Task<Boolean> InitCamera( CancellationToken cancel )
         {
             var cameraSystem = LoaderUtility.GetActiveLoader()?.GetLoadedSubsystem<XRCameraSubsystem>();
             if ( cameraSystem != null )
             {
-                if( !cameraSystem.currentCamera.HasFlag( Feature.WorldFacingCamera ))
-                {
-                    Debug.LogError( $"[{nameof(InitARSession)}]-[{nameof(InitCamera)}] World facing camera not supported, nothing to do here. Camera: {cameraSystem.currentCamera.ToString()}" );
-                    return false;
-                }
+                Debug.Log( $"[{nameof(InitARSession)}]-[{nameof(InitCamera)}] checking camera permission" );
+                IsCameraAllowed = false;
+                await UniTask.WaitUntil( () => cameraSystem.permissionGranted, cancellationToken: cancel );
+                IsCameraAllowed = cameraSystem.permissionGranted;
+                Debug.Log( $"[{nameof(InitARSession)}]-[{nameof(InitCamera)}] Camera permission acquired" );
 
                 if ( !cameraSystem.permissionGranted )
                 {
                     Debug.LogError( $"[{nameof(InitARSession)}]-[{nameof(InitCamera)}] camera permission not granted, nothing to do here OR wait for camera permission " );
+                    return false;
+                }
+
+                //Need time for camera init if camera permission was granted now
+                await UniTask.NextFrame( cancel );
+
+                if( !cameraSystem.currentCamera.HasFlag( Feature.WorldFacingCamera ))
+                {
+                    Debug.LogError( $"[{nameof(InitARSession)}]-[{nameof(InitCamera)}] World facing camera not supported, nothing to do here. Camera: {cameraSystem.currentCamera.ToString()}" );
                     return false;
                 }
 

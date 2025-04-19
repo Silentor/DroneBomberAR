@@ -27,9 +27,13 @@ namespace Silentor.Bomber
 
         public bool IsBombReady => Time.time - _lastTimedroppedBomb > BombDropTimeout;
 
+        public int BombsDropped { get; private set; }
+
         public int Score { get; private set; }
 
         public TimeSpan MissionTime => DateTime.Now - _startTime;
+
+        public InitARSession InitARSession => _init;
 
         public void DropTheBomb( )
         {
@@ -39,6 +43,7 @@ namespace Silentor.Bomber
              _lastTimedroppedBomb = Time.time;
              var newBomb = Instantiate( BombPrefab, _droneCamera.transform.position, Quaternion.identity );
              newBomb.Init( _droneCamera.velocity, Grounds );
+             BombsDropped++;
         }
 
         public Ground FindGroundFor( Vector3 position )
@@ -102,6 +107,8 @@ namespace Silentor.Bomber
             }
 
             await _init.Restart( cancel );
+
+            _startTime = DateTime.Now;
         }
 
         public void OnTankDamaged( Tank tank, Bomb bomb )
@@ -124,6 +131,11 @@ namespace Silentor.Bomber
         private float _lastTimedroppedBomb = 0f;
         private DateTime _startTime;
 
+        private void Awake( )
+        {
+            _init = new InitARSession();
+        }
+
         private void Start( )
         {
             _droneCamera = Camera.main;
@@ -142,13 +154,16 @@ namespace Silentor.Bomber
 
         private async UniTask GamePlay( CancellationToken cancel )
         {
-            _init = new InitARSession();
             var initResult = await _init.Init( cancel );
             if ( !initResult )
             {
                 Debug.LogError( $"[{nameof(GameLogic)}]-[{nameof(GamePlay)}] init not successfull, game is impossible" );
                 return;
             }
+
+            var drone = FindAnyObjectByType<Drone>();
+            drone.EnableDrone();
+            _startTime = DateTime.Now;
 
             _init.PlaneManager.trackablesChanged.AddListener( PlaneManagerOnPlanesChanged );
             //_anchorManager = init.AnchorManager;

@@ -16,11 +16,15 @@ namespace Silentor.Bomber
         private Vector3 _oldPosition;
 
 
-        // Start is called once before the first execution of Update after the MonoBehaviour is created
-        void Start()
+        void Awake()
         {
             _audio = GetComponent<AudioSource>();
             _droneCamera = GetComponent<Camera>();
+        }
+
+        public void EnableDrone( )
+        {
+            _audio.Play();
         }
 
         // Update is called once per frame
